@@ -39,65 +39,21 @@ jobs:
 
           if [ "$LOCAL" = "$UPSTREAM" ]; then
             echo "has_updates=false" >> $GITHUB_OUTPUT
-            echo "No new commits from upstream"
           else
             NEW_COUNT=$(git rev-list --count HEAD..upstream/${{ env.UPSTREAM_BRANCH }})
             echo "has_updates=true" >> $GITHUB_OUTPUT
             echo "new_count=$NEW_COUNT" >> $GITHUB_OUTPUT
-            echo "Found $NEW_COUNT new commits from upstream"
-
-            TITLES=$(git log --format='- %s' HEAD..upstream/${{ env.UPSTREAM_BRANCH }} | head -10)
-            {
-              echo "titles<<EOF"
-              echo "$TITLES"
-              echo "EOF"
-            } >> $GITHUB_OUTPUT
           fi
 
       - name: Merge upstream (force push on conflict)
         if: steps.check.outputs.has_updates == 'true'
-        id: merge
         run: |
           git config user.name "fund-sync-bot"
           git config user.email "bot@qwqq1.local"
 
-          if git merge upstream/${{ env.UPSTREAM_BRANCH }} --no-edit; then
-            echo "merge_method=merge" >> $GITHUB_OUTPUT
-            echo "Merge succeeded"
-          else
-            echo "Merge conflict detected, force pushing upstream version"
+          if ! git merge upstream/${{ env.UPSTREAM_BRANCH }} --no-edit; then
             git merge --abort
             git reset --hard upstream/${{ env.UPSTREAM_BRANCH }}
-            echo "merge_method=force_push" >> $GITHUB_OUTPUT
           fi
 
           git push origin ${{ env.FORK_BRANCH }}
-
-      - name: Save notification payload
-        if: steps.check.outputs.has_updates == 'true'
-        run: |
-          COUNT="${{ steps.check.outputs.new_count }}"
-          TITLES="${{ steps.check.outputs.titles }}"
-          METHOD="${{ steps.merge.outputs.merge_method }}"
-
-          if [ "$METHOD" = "force_push" ]; then
-            METHOD_TEXT="强制覆盖(有冲突)"
-          else
-            METHOD_TEXT="自动合并"
-          fi
-
-          {
-            echo "🔄 基估宝上游有更新，已自动同步 ${COUNT} 个commit (${METHOD_TEXT})"
-            echo ""
-            echo "${TITLES}"
-          } > /tmp/sync_notify.txt
-
-          cat /tmp/sync_notify.txt
-
-      - name: Upload notification artifact
-        if: steps.check.outputs.has_updates == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: sync-notification
-          path: /tmp/sync_notify.txt
-          retention-days: 1

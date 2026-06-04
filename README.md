@@ -1,6 +1,6 @@
 # fund-sync-bot
 
-🔄 自动同步 `qwqq1/real-time-fund` 与上游 `hzm0321/real-time-fund`
+🔄 自动同步 [qwqq1/real-time-fund](https://github.com/qwqq1/real-time-fund) 与上游 [hzm0321/real-time-fund](https://github.com/hzm0321/real-time-fund)
 
 ## 工作流程
 
@@ -12,8 +12,4 @@
 
 ## 手动触发
 
-在 GitHub Actions 页面点击 "Run workflow" 即可。
-
-## 通知
-
-同步成功后通过 Hermes → ntfy(jigubao) → Telegram 通知。
+在 [Actions 页面](https://github.com/qwqq1/fund-sync-bot/actions) 点击 "Run workflow" 即可。
